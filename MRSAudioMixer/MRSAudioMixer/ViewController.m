@@ -27,11 +27,11 @@
     NSString *audioPath1 = [[NSBundle mainBundle] pathForResource:@"6" ofType:@"m4a"];
     NSString *audioPath2 = [[NSBundle mainBundle] pathForResource:@"7" ofType:@"m4a"];
     
-    [MRSAudioMixer audio1:[NSURL fileURLWithPath:audioPath1] audio2:[NSURL fileURLWithPath:audioPath2] handler:^(NSString *filePath) {
-        NSLog(@"---filePath---%@----",filePath);
-        if (filePath.length > 0) {
-            [self playAudio:[NSURL fileURLWithPath:filePath]];
-        }
+    [MRSAudioMixer mixAudio:audioPath1 andAudio:audioPath2 handler:^(NSString *outputFilepath) {
+            NSLog(@"---filePath---%@----",outputFilepath);
+            if (outputFilepath.length > 0) {
+                [self playAudio:[NSURL fileURLWithPath:outputFilepath]];
+            }
     }];
 }
 
