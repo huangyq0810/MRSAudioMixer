@@ -30,17 +30,10 @@
     
     # pragma mark - 合成设置
     
-    // 设置合成后的时间，以录音时间为准
+    // 设置合成后的时间，录音时间短，以录音时间为准
     CMTime duration = recordAsset.duration;
     // 创建可变的音视频组合
     AVMutableComposition *composition = [AVMutableComposition composition];
-    
-    // 同上
-    AVMutableCompositionTrack *backgroundTrack = [composition addMutableTrackWithMediaType:AVMediaTypeAudio preferredTrackID:kCMPersistentTrackID_Invalid];
-    
-    AVAssetTrack *backgroundAssetTrack = [backgroundAsset tracksWithMediaType:AVMediaTypeAudio].firstObject;
-    
-    [backgroundTrack insertTimeRange:CMTimeRangeMake(kCMTimeZero, duration) ofTrack: backgroundAssetTrack atTime:kCMTimeZero error:nil];
     
     // 音频通道 枚举 kCMPersistentTrackID_Invalid = 0
     AVMutableCompositionTrack *recordTrack = [composition addMutableTrackWithMediaType:AVMediaTypeAudio preferredTrackID:kCMPersistentTrackID_Invalid];
@@ -49,17 +42,24 @@
     // 把采集轨道数据加入到可变轨道之中
     [recordTrack insertTimeRange:CMTimeRangeMake(kCMTimeZero, duration) ofTrack: recordAssetTrack atTime:kCMTimeZero error:nil];
     
+    // 同上
+    AVMutableCompositionTrack *backgroundTrack = [composition addMutableTrackWithMediaType:AVMediaTypeAudio preferredTrackID:kCMPersistentTrackID_Invalid];
+    
+    AVAssetTrack *backgroundAssetTrack = [backgroundAsset tracksWithMediaType:AVMediaTypeAudio].firstObject;
+    
+    [backgroundTrack insertTimeRange:CMTimeRangeMake(kCMTimeZero, duration) ofTrack: backgroundAssetTrack atTime:kCMTimeZero error:nil];
+    
     # pragma mark - 渐变音
     
     // 得到对应轨道中的音频声音信息，并更改
     AVMutableAudioMixInputParameters *parameters = [AVMutableAudioMixInputParameters audioMixInputParametersWithTrack:backgroundAssetTrack];
     //初始化开始渐变持续时间
-    CMTime continueTime = CMTimeMakeWithSeconds(2, 1);
-    //设置前2秒背景音音量从0到1.0
+    CMTime continueTime = CMTimeMakeWithSeconds(1, 1);
+    //设置前1秒背景音音量从0到1.0
     [parameters setVolumeRampFromStartVolume:0 toEndVolume:1.0 timeRange:CMTimeRangeMake(CMTimeMakeWithSeconds(0, 1), continueTime)];
     //计算结束渐变持续时间
     CMTime fadeOutStartTime = CMTimeSubtract(duration, continueTime);
-    //设置最后2秒背景音音量从1.0到0
+    //设置最后1秒背景音音量从1.0到0
     [parameters setVolumeRampFromStartVolume:1.0 toEndVolume:0 timeRange:CMTimeRangeMake(fadeOutStartTime, continueTime)];
     
     //赋给对应的类
@@ -71,16 +71,25 @@
     // 渐变音添加到输出配置中
     session.audioMix = audioMix;
     
-    # pragma mark - 输出
+    # pragma mark - 路径
     
-    NSString *documentFilePath = [NSHomeDirectory() stringByAppendingPathComponent:@"Documents"];
+    // 唯一性
+    NSDate *date = [NSDate date];
+    NSDateFormatter *df = [[NSDateFormatter alloc] init];
+    [df setDateFormat:@"yyyyMMddHHmmssSSS"];
+    NSString *dateString = [NSString stringWithFormat:@"%@",[df stringFromDate:date]];
+    NSString *fullFileName = [NSString stringWithFormat:@"%@.m4a",dateString];
+
+    NSString *documentPath = [NSHomeDirectory() stringByAppendingPathComponent:@"Documents"];
     // 输出路径
-    NSString *outPutFilePath = [documentFilePath stringByAppendingPathComponent:@"Audio.m4a"];
-    
+    NSString *outPutFilePath = [documentPath stringByAppendingPathComponent:fullFileName];
+    // 如果音频已经存在，先删除
     if ([[NSFileManager defaultManager] fileExistsAtPath:outPutFilePath])
     {
         [[NSFileManager defaultManager] removeItemAtPath:outPutFilePath error:nil];
     }
+    # pragma mark - 输出
+    
     // 输出地址
     session.outputURL = [NSURL fileURLWithPath:outPutFilePath];
     // 输出类型
@@ -93,7 +102,7 @@
             handler(outPutFilePath);
         } else {
             NSLog(@"输出错误");
-            handler(@"");
+            handler(nil);
         }
     }];
 }

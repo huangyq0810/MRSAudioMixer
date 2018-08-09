@@ -29,7 +29,7 @@
     
     [MRSAudioMixer mixAudio:audioPath1 andAudio:audioPath2 handler:^(NSString *outputFilepath) {
             NSLog(@"---filePath---%@----",outputFilepath);
-            if (outputFilepath.length > 0) {
+            if (outputFilepath != nil && outputFilepath.length > 0) {
                 [self playAudio:[NSURL fileURLWithPath:outputFilepath]];
             }
     }];
